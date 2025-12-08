@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react"
-import { Edit2, MessageSquare, Plus, Search, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
+import { Plus, Search, ThumbsUp } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { Avatar } from "../shared/ui/avatar"
-import { Button } from "../shared/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "../shared/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../shared/ui/dialog"
-import { Input } from "../shared/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../shared/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../shared/ui/table"
-import { Textarea } from "../shared/ui/textarea"
-import { highlightText } from "../shared/lib/highlight"
+import { PostRow, Post } from "@/entities/post"
+import { Avatar } from "@/shared/ui/avatar"
+import { Button } from "@/shared/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
+import { Input } from "@/shared/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
+import { Textarea } from "@/shared/ui/textarea"
+import { highlightText } from "@/shared/lib/highlight"
 
 const PostsManager = () => {
   const navigate = useNavigate()
@@ -17,12 +18,12 @@ const PostsManager = () => {
   const queryParams = new URLSearchParams(location.search)
 
   // 상태 관리
-  const [posts, setPosts] = useState([])
+  const [posts, setPosts] = useState<Post[]>([])
   const [total, setTotal] = useState(0)
   const [skip, setSkip] = useState(parseInt(queryParams.get("skip") || "0"))
   const [limit, setLimit] = useState(parseInt(queryParams.get("limit") || "10"))
   const [searchQuery, setSearchQuery] = useState(queryParams.get("search") || "")
-  const [selectedPost, setSelectedPost] = useState(null)
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null)
   const [sortBy, setSortBy] = useState(queryParams.get("sortBy") || "")
   const [sortOrder, setSortOrder] = useState(queryParams.get("sortOrder") || "asc")
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -326,67 +327,23 @@ const PostsManager = () => {
       </TableHeader>
       <TableBody>
         {posts.map((post) => (
-          <TableRow key={post.id}>
-            <TableCell>{post.id}</TableCell>
-            <TableCell>
-              <div className="space-y-1">
-                <div>{highlightText(post.title, searchQuery)}</div>
-
-                <div className="flex flex-wrap gap-1">
-                  {post.tags?.map((tag) => (
-                    <span
-                      key={tag}
-                      className={`px-1 text-[9px] font-semibold rounded-[4px] cursor-pointer ${
-                        selectedTag === tag
-                          ? "text-white bg-blue-500 hover:bg-blue-600"
-                          : "text-blue-800 bg-blue-100 hover:bg-blue-200"
-                      }`}
-                      onClick={() => {
-                        setSelectedTag(tag)
-                        updateURL()
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center space-x-2 cursor-pointer" onClick={() => openUserModal(post.author)}>
-                <Avatar src={post.author?.image} alt={post.author?.username} size="md" />
-                <span>{post.author?.username}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <ThumbsUp className="w-4 h-4" />
-                <span>{post.reactions?.likes || 0}</span>
-                <ThumbsDown className="w-4 h-4" />
-                <span>{post.reactions?.dislikes || 0}</span>
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => openPostDetail(post)}>
-                  <MessageSquare className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedPost(post)
-                    setShowEditDialog(true)
-                  }}
-                >
-                  <Edit2 className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => deletePost(post.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </TableCell>
-          </TableRow>
+          <PostRow
+            key={post.id}
+            post={post}
+            searchQuery={searchQuery}
+            selectedTag={selectedTag}
+            onTagClick={(tag) => {
+              setSelectedTag(tag)
+              updateURL()
+            }}
+            onAuthorClick={openUserModal}
+            onDetailClick={openPostDetail}
+            onEditClick={(post) => {
+              setSelectedPost(post)
+              setShowEditDialog(true)
+            }}
+            onDeleteClick={deletePost}
+          />
         ))}
       </TableBody>
     </Table>
