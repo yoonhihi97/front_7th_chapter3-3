@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Edit2, MessageSquare, Plus, Search, ThumbsDown, ThumbsUp, Trash2 } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
+import { Avatar } from "../shared/ui/avatar"
 import { Button } from "../shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../shared/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../shared/ui/dialog"
@@ -353,7 +354,7 @@ const PostsManager = () => {
             </TableCell>
             <TableCell>
               <div className="flex items-center space-x-2 cursor-pointer" onClick={() => openUserModal(post.author)}>
-                <img src={post.author?.image} alt={post.author?.username} className="w-8 h-8 rounded-full" />
+                <Avatar src={post.author?.image} alt={post.author?.username} size="md" />
                 <span>{post.author?.username}</span>
               </div>
             </TableCell>
@@ -642,7 +643,7 @@ const PostsManager = () => {
             <DialogTitle>사용자 정보</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <img src={selectedUser?.image} alt={selectedUser?.username} className="w-24 h-24 rounded-full mx-auto" />
+            <Avatar src={selectedUser?.image} alt={selectedUser?.username} size="xl" className="mx-auto" />
             <h3 className="text-xl font-semibold text-center">{selectedUser?.username}</h3>
             <div className="space-y-2">
               <p>
