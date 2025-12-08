@@ -455,16 +455,13 @@ const PostsManager = () => {
           {/* 검색 및 필터 컨트롤 */}
           <div className="flex gap-4">
             <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="게시물 검색..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && searchPosts()}
-                />
-              </div>
+              <Input
+                placeholder="게시물 검색..."
+                leftAddon={<Search className="h-4 w-4" />}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && searchPosts()}
+              />
             </div>
             <Select
               value={selectedTag}
