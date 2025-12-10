@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient } from "@/shared/api/base"
+import { toast } from "@/shared/ui/toast"
 import type { Post, PostDto, PostsResponse } from "@/entities/post"
 
 export const useUpdatePost = () => {
@@ -24,7 +25,11 @@ export const useUpdatePost = () => {
 
       return { previousQueries }
     },
+    onSuccess: () => {
+      toast.success("게시물이 수정되었습니다.")
+    },
     onError: (_err, _post, context) => {
+      toast.error("게시물 수정에 실패했습니다.")
       if (context?.previousQueries) {
         context.previousQueries.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data)

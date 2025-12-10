@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiClient } from "@/shared/api/base"
+import { toast } from "@/shared/ui/toast"
 import type { PostDto, PostsResponse } from "@/entities/post"
 
 interface CreatePostDto {
@@ -39,7 +40,11 @@ export const useCreatePost = () => {
 
       return { previousQueries }
     },
+    onSuccess: () => {
+      toast.success("게시물이 추가되었습니다.")
+    },
     onError: (_err, _newPost, context) => {
+      toast.error("게시물 추가에 실패했습니다.")
       if (context?.previousQueries) {
         context.previousQueries.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data)
