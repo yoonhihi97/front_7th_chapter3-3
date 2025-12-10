@@ -3,20 +3,32 @@ import { TableCell, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
 import { Avatar } from "@/shared/ui/avatar"
 import { highlightText } from "@/shared/lib/highlight"
-import { usePostsParams, usePostsTableActions } from "@/widgets/posts-table"
 import { ReactionCount } from "./ReactionCount"
 import { Post } from "../model/post"
 
 interface PostRowProps {
   post: Post
+  searchQuery: string
+  selectedTag: string
+  onTagClick: (tag: string) => void
+  onDeleteClick: (id: number) => void
+  onDetailClick: (post: Post) => void
+  onEditClick: (post: Post) => void
+  onAuthorClick: (userId: number) => void
 }
 
-export const PostRow = ({ post }: PostRowProps) => {
-  const { searchQuery, selectedTag, setTag } = usePostsParams()
-  const { onDeleteClick, onDetailClick, onEditClick, onAuthorClick } = usePostsTableActions()
-
+export const PostRow = ({
+  post,
+  searchQuery,
+  selectedTag,
+  onTagClick,
+  onDeleteClick,
+  onDetailClick,
+  onEditClick,
+  onAuthorClick,
+}: PostRowProps) => {
   const handleTagClick = (tag: string) => {
-    setTag(tag)
+    onTagClick(tag)
   }
 
   const handleAuthorClick = () => {

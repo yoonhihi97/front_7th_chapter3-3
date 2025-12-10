@@ -2,9 +2,11 @@ import { PostRow } from "@/entities/post"
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { usePostsWithUsers } from "../lib/use-posts-with-users"
 import { usePostsParams } from "../lib/use-posts-params"
+import { usePostsTableActions } from "../lib/posts-table-context"
 
 export const PostsTable = () => {
-  const { limit, skip, searchQuery, selectedTag, sortBy, sortOrder } = usePostsParams()
+  const { limit, skip, searchQuery, selectedTag, sortBy, sortOrder, setTag } = usePostsParams()
+  const { onDeleteClick, onDetailClick, onEditClick, onAuthorClick } = usePostsTableActions()
 
   const { posts, isLoading } = usePostsWithUsers({
     limit,
@@ -32,7 +34,17 @@ export const PostsTable = () => {
       </TableHeader>
       <TableBody>
         {posts.map((post) => (
-          <PostRow key={post.id} post={post} />
+          <PostRow
+            key={post.id}
+            post={post}
+            searchQuery={searchQuery}
+            selectedTag={selectedTag}
+            onTagClick={setTag}
+            onDeleteClick={onDeleteClick}
+            onDetailClick={onDetailClick}
+            onEditClick={onEditClick}
+            onAuthorClick={onAuthorClick}
+          />
         ))}
       </TableBody>
     </Table>
