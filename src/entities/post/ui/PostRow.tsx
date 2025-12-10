@@ -1,36 +1,31 @@
 import { Edit2, MessageSquare, Trash2 } from "lucide-react"
-import { useSetAtom } from "jotai"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { TableCell, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
 import { Avatar } from "@/shared/ui/avatar"
 import { highlightText } from "@/shared/lib/highlight"
 import { ReactionCount } from "./ReactionCount"
-import {
-  Post,
-  selectedPostAtom,
-  showEditPostDialogAtom,
-  showPostDetailDialogAtom,
-} from "../model/post"
-import { getUserById } from "@/entities/user"
-import { selectedUserAtom, showUserModalAtom } from "@/entities/user"
+import { Post } from "../model/post"
 
 interface PostRowProps {
   post: Post
   onDeleteClick: (id: number) => void
+  onDetailClick: (post: Post) => void
+  onEditClick: (post: Post) => void
+  onAuthorClick: (userId: number) => void
 }
 
-export const PostRow = ({ post, onDeleteClick }: PostRowProps) => {
+export const PostRow = ({
+  post,
+  onDeleteClick,
+  onDetailClick,
+  onEditClick,
+  onAuthorClick,
+}: PostRowProps) => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const searchQuery = searchParams.get("search") || ""
   const selectedTag = searchParams.get("tag") || ""
-
-  const setSelectedPost = useSetAtom(selectedPostAtom)
-  const setShowEditDialog = useSetAtom(showEditPostDialogAtom)
-  const setShowDetailDialog = useSetAtom(showPostDetailDialogAtom)
-  const setSelectedUser = useSetAtom(selectedUserAtom)
-  const setShowUserModal = useSetAtom(showUserModalAtom)
 
   const handleTagClick = (tag: string) => {
     const params = new URLSearchParams(searchParams)
@@ -39,21 +34,18 @@ export const PostRow = ({ post, onDeleteClick }: PostRowProps) => {
     navigate(`?${params.toString()}`)
   }
 
-  const handleAuthorClick = async () => {
-    if (!post.author) return
-    const userData = await getUserById(post.author.id)
-    setSelectedUser(userData)
-    setShowUserModal(true)
+  const handleAuthorClick = () => {
+    if (post.author) {
+      onAuthorClick(post.author.id)
+    }
   }
 
   const handleDetailClick = () => {
-    setSelectedPost(post)
-    setShowDetailDialog(true)
+    onDetailClick(post)
   }
 
   const handleEditClick = () => {
-    setSelectedPost(post)
-    setShowEditDialog(true)
+    onEditClick(post)
   }
 
   return (
