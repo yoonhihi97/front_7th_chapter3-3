@@ -1,13 +1,21 @@
 import { useSearchParams } from "react-router-dom"
-import { PostRow } from "@/entities/post"
+import { Post, PostRow } from "@/entities/post"
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/shared/ui/table"
 import { usePostsWithUsers } from "../lib/use-posts-with-users"
 
 interface PostsTableProps {
   onDeleteClick: (id: number) => void
+  onDetailClick: (post: Post) => void
+  onEditClick: (post: Post) => void
+  onAuthorClick: (userId: number) => void
 }
 
-export const PostsTable = ({ onDeleteClick }: PostsTableProps) => {
+export const PostsTable = ({
+  onDeleteClick,
+  onDetailClick,
+  onEditClick,
+  onAuthorClick,
+}: PostsTableProps) => {
   const [searchParams] = useSearchParams()
 
   const limit = parseInt(searchParams.get("limit") || "10")
@@ -47,6 +55,9 @@ export const PostsTable = ({ onDeleteClick }: PostsTableProps) => {
             key={post.id}
             post={post}
             onDeleteClick={onDeleteClick}
+            onDetailClick={onDetailClick}
+            onEditClick={onEditClick}
+            onAuthorClick={onAuthorClick}
           />
         ))}
       </TableBody>
