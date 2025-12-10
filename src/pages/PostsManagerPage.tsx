@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Edit2, Plus, Search, ThumbsUp, Trash2 } from "lucide-react"
+import { Plus, Search } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useAtom, useAtomValue } from "jotai"
 import { useQuery } from "@tanstack/react-query"
@@ -10,8 +10,8 @@ import {
   showPostDetailDialogAtom,
 } from "@/entities/post"
 import type { Comment } from "@/entities/comment"
-import { commentQueries } from "@/entities/comment"
-import { selectedUserAtom, showUserModalAtom } from "@/entities/user"
+import { commentQueries, CommentItem } from "@/entities/comment"
+import { selectedUserAtom, showUserModalAtom, UserInfo } from "@/entities/user"
 import { tagQueries } from "@/entities/tag"
 import { useCreatePost } from "@/features/post/create"
 import { useUpdatePost } from "@/features/post/update"
@@ -21,7 +21,6 @@ import { useUpdateComment } from "@/features/comment/update"
 import { useDeleteComment } from "@/features/comment/delete"
 import { useLikeComment } from "@/features/comment/like"
 import { PostsTable } from "@/widgets/posts-table"
-import { Avatar } from "@/shared/ui/avatar"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
@@ -386,42 +385,17 @@ const PostsManager = () => {
                 </div>
                 <div className="space-y-1">
                   {comments.map((comment) => (
-                    <div
+                    <CommentItem
                       key={comment.id}
-                      className="flex items-center justify-between text-sm border-b pb-1"
-                    >
-                      <div className="flex items-center space-x-2 overflow-hidden">
-                        <span className="font-medium truncate">{comment.user.username}:</span>
-                        <span className="truncate">{highlightText(comment.body, searchQuery)}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleLikeComment(comment, selectedPost.id)}
-                        >
-                          <ThumbsUp className="w-3 h-3" />
-                          <span className="ml-1 text-xs">{comment.likes}</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedComment(comment)
-                            setShowEditCommentDialog(true)
-                          }}
-                        >
-                          <Edit2 className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteComment(comment.id, selectedPost.id)}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
+                      comment={comment}
+                      searchQuery={searchQuery}
+                      onLike={() => handleLikeComment(comment, selectedPost.id)}
+                      onEdit={() => {
+                        setSelectedComment(comment)
+                        setShowEditCommentDialog(true)
+                      }}
+                      onDelete={() => handleDeleteComment(comment.id, selectedPost.id)}
+                    />
                   ))}
                 </div>
               </div>
@@ -436,31 +410,7 @@ const PostsManager = () => {
           <DialogHeader>
             <DialogTitle>사용자 정보</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <Avatar src={selectedUser?.image} alt={selectedUser?.username} size="xl" className="mx-auto" />
-            <h3 className="text-xl font-semibold text-center">{selectedUser?.username}</h3>
-            <div className="space-y-2">
-              <p>
-                <strong>이름:</strong> {selectedUser?.firstName} {selectedUser?.lastName}
-              </p>
-              <p>
-                <strong>나이:</strong> {selectedUser?.age}
-              </p>
-              <p>
-                <strong>이메일:</strong> {selectedUser?.email}
-              </p>
-              <p>
-                <strong>전화번호:</strong> {selectedUser?.phone}
-              </p>
-              <p>
-                <strong>주소:</strong> {selectedUser?.address?.address}, {selectedUser?.address?.city},{" "}
-                {selectedUser?.address?.state}
-              </p>
-              <p>
-                <strong>직장:</strong> {selectedUser?.company?.name} - {selectedUser?.company?.title}
-              </p>
-            </div>
-          </div>
+          {selectedUser && <UserInfo user={selectedUser} />}
         </DialogContent>
       </Dialog>
     </Card>

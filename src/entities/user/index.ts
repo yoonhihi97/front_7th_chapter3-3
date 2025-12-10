@@ -5,3 +5,5 @@ export type { UsersResponse } from "./api/get-users"
 
 export type { User, UserPreview } from "./model/user"
 export { selectedUserAtom, showUserModalAtom } from "./model/user"
+
+export { UserInfo } from "./ui/UserInfo"
