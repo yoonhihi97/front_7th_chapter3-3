@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 
 interface UsePostsSearchReturn {
   input: string
@@ -7,10 +7,14 @@ interface UsePostsSearchReturn {
 }
 
 export const usePostsSearch = (
-  initialValue: string,
+  searchQuery: string,
   onSubmit: (query: string) => void,
 ): UsePostsSearchReturn => {
-  const [input, setInput] = useState(initialValue)
+  const [input, setInput] = useState(searchQuery)
+
+  useEffect(() => {
+    setInput(searchQuery)
+  }, [searchQuery])
 
   const submit = useCallback(() => {
     onSubmit(input)
