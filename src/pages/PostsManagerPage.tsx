@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { Plus, Search } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { useAtom } from "jotai"
+import { useSetAtom } from "jotai"
 import { useQuery } from "@tanstack/react-query"
-import { showEditPostDialogAtom, showPostDetailDialogAtom } from "@/entities/post"
-import { showUserModalAtom } from "@/entities/user"
+import { Post, selectedPostAtom } from "@/entities/post"
+import { getUserById, selectedUserAtom } from "@/entities/user"
 import { tagQueries } from "@/entities/tag"
 import { CreatePostDialog } from "@/features/post/create"
 import { UpdatePostDialog } from "@/features/post/update"
@@ -32,11 +32,15 @@ const PostsManager = () => {
   // 검색 입력값 (엔터 전 임시 상태)
   const [searchInput, setSearchInput] = useState(searchQuery)
 
-  // Dialog 상태 - 추가는 로컬, 수정/상세/사용자는 PostRow에서 atom으로 트리거
+  // Dialog 상태 - 모두 로컬 useState로 관리
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useAtom(showEditPostDialogAtom)
-  const [showPostDetailDialog, setShowPostDetailDialog] = useAtom(showPostDetailDialogAtom)
-  const [showUserModal, setShowUserModal] = useAtom(showUserModalAtom)
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showPostDetailDialog, setShowPostDetailDialog] = useState(false)
+  const [showUserModal, setShowUserModal] = useState(false)
+
+  // 선택된 항목 - Jotai atoms (여러 컴포넌트에서 공유)
+  const setSelectedPost = useSetAtom(selectedPostAtom)
+  const setSelectedUser = useSetAtom(selectedUserAtom)
 
   // TanStack Query - tags
   const { data: tags = [] } = useQuery(tagQueries.list())
@@ -63,6 +67,22 @@ const PostsManager = () => {
 
   const handleDeletePost = (id: number) => {
     deletePost.mutate(id)
+  }
+
+  const handleDetailClick = (post: Post) => {
+    setSelectedPost(post)
+    setShowPostDetailDialog(true)
+  }
+
+  const handleEditClick = (post: Post) => {
+    setSelectedPost(post)
+    setShowEditDialog(true)
+  }
+
+  const handleAuthorClick = async (userId: number) => {
+    const userData = await getUserById(userId)
+    setSelectedUser(userData)
+    setShowUserModal(true)
   }
 
   return (
@@ -131,7 +151,12 @@ const PostsManager = () => {
           </div>
 
           {/* 게시물 테이블 */}
-          <PostsTable onDeleteClick={handleDeletePost} />
+          <PostsTable
+            onDeleteClick={handleDeletePost}
+            onDetailClick={handleDetailClick}
+            onEditClick={handleEditClick}
+            onAuthorClick={handleAuthorClick}
+          />
 
           {/* 페이지네이션 */}
           <div className="flex justify-between items-center">
