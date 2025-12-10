@@ -32,9 +32,9 @@ export class ApiClient {
     return this.handleResponse<TResult>(response)
   }
 
-  public async post<TResult = unknown, TData = Record<string, unknown>>(
+  public async post<TResult = unknown>(
     endpoint: string,
-    body: TData,
+    body: unknown,
   ): Promise<TResult> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "POST",
@@ -44,9 +44,9 @@ export class ApiClient {
     return this.handleResponse<TResult>(response)
   }
 
-  public async put<TResult = unknown, TData = Record<string, unknown>>(
+  public async put<TResult = unknown>(
     endpoint: string,
-    body: TData,
+    body: unknown,
   ): Promise<TResult> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "PUT",
@@ -56,9 +56,9 @@ export class ApiClient {
     return this.handleResponse<TResult>(response)
   }
 
-  public async patch<TResult = unknown, TData = Record<string, unknown>>(
+  public async patch<TResult = unknown>(
     endpoint: string,
-    body: TData,
+    body: unknown,
   ): Promise<TResult> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "PATCH",

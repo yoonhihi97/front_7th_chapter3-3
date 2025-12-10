@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Edit2, Plus, Search, ThumbsUp, Trash2 } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { useAtom, useAtomValue } from "jotai"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQuery } from "@tanstack/react-query"
 import {
   selectedPostAtom,
   showAddPostDialogAtom,
@@ -13,6 +13,13 @@ import type { Comment } from "@/entities/comment"
 import { commentQueries } from "@/entities/comment"
 import { selectedUserAtom, showUserModalAtom } from "@/entities/user"
 import { tagQueries } from "@/entities/tag"
+import { useCreatePost } from "@/features/post/create"
+import { useUpdatePost } from "@/features/post/update"
+import { useDeletePost } from "@/features/post/delete"
+import { useCreateComment } from "@/features/comment/create"
+import { useUpdateComment } from "@/features/comment/update"
+import { useDeleteComment } from "@/features/comment/delete"
+import { useLikeComment } from "@/features/comment/like"
 import { PostsTable } from "@/widgets/posts-table"
 import { Avatar } from "@/shared/ui/avatar"
 import { Button } from "@/shared/ui/button"
@@ -26,7 +33,6 @@ import { highlightText } from "@/shared/lib/highlight"
 const PostsManager = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const queryClient = useQueryClient()
 
   // URL에서 상태 읽기
   const skip = parseInt(searchParams.get("skip") || "0")
@@ -57,6 +63,15 @@ const PostsManager = () => {
   })
   const comments = commentsData?.comments ?? []
 
+  // Mutations
+  const createPost = useCreatePost()
+  const updatePostMutation = useUpdatePost()
+  const deletePostMutation = useDeletePost()
+  const createComment = useCreateComment()
+  const updateCommentMutation = useUpdateComment()
+  const deleteCommentMutation = useDeleteComment()
+  const likeCommentMutation = useLikeComment()
+
   // 로컬 form 상태
   const [newPost, setNewPost] = useState({ title: "", body: "", userId: 1 })
   const [selectedComment, setSelectedComment] = useState<Comment | null>(null)
@@ -77,107 +92,66 @@ const PostsManager = () => {
     navigate(`?${params.toString()}`)
   }
 
-  // 게시물 추가 (TODO: features/post/create useMutation으로 이동)
-  const addPost = async () => {
-    try {
-      const response = await fetch("/api/posts/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPost),
-      })
-      await response.json()
-      setShowAddDialog(false)
-      setNewPost({ title: "", body: "", userId: 1 })
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-    } catch (error) {
-      console.error("게시물 추가 오류:", error)
-    }
+  // 게시물 추가
+  const handleAddPost = () => {
+    createPost.mutate(newPost, {
+      onSuccess: () => {
+        setShowAddDialog(false)
+        setNewPost({ title: "", body: "", userId: 1 })
+      },
+    })
   }
 
-  // 게시물 업데이트 (TODO: features/post/update useMutation으로 이동)
-  const updatePost = async () => {
+  // 게시물 업데이트
+  const handleUpdatePost = () => {
     if (!selectedPost) return
-    try {
-      const response = await fetch(`/api/posts/${selectedPost.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(selectedPost),
-      })
-      await response.json()
-      setShowEditDialog(false)
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-    } catch (error) {
-      console.error("게시물 업데이트 오류:", error)
-    }
+    updatePostMutation.mutate(selectedPost, {
+      onSuccess: () => {
+        setShowEditDialog(false)
+      },
+    })
   }
 
-  // 게시물 삭제 (TODO: features/post/delete useMutation으로 이동)
-  const deletePost = async (id: number) => {
-    try {
-      await fetch(`/api/posts/${id}`, { method: "DELETE" })
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-    } catch (error) {
-      console.error("게시물 삭제 오류:", error)
-    }
+  // 게시물 삭제
+  const handleDeletePost = (id: number) => {
+    deletePostMutation.mutate(id)
   }
 
   // 댓글 추가
-  const addComment = async () => {
+  const handleAddComment = () => {
     if (!newComment.postId) return
-    try {
-      const response = await fetch("/api/comments/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newComment),
-      })
-      await response.json()
-      setShowAddCommentDialog(false)
-      setNewComment({ body: "", postId: null, userId: 1 })
-      queryClient.invalidateQueries({ queryKey: ["comments", newComment.postId] })
-    } catch (error) {
-      console.error("댓글 추가 오류:", error)
-    }
+    createComment.mutate(
+      { body: newComment.body, postId: newComment.postId, userId: newComment.userId },
+      {
+        onSuccess: () => {
+          setShowAddCommentDialog(false)
+          setNewComment({ body: "", postId: null, userId: 1 })
+        },
+      },
+    )
   }
 
   // 댓글 업데이트
-  const updateComment = async () => {
-    if (!selectedComment) return
-    try {
-      const response = await fetch(`/api/comments/${selectedComment.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: selectedComment.body }),
-      })
-      const data = await response.json()
-      setShowEditCommentDialog(false)
-      queryClient.invalidateQueries({ queryKey: ["comments", data.postId] })
-    } catch (error) {
-      console.error("댓글 업데이트 오류:", error)
-    }
+  const handleUpdateComment = () => {
+    if (!selectedComment || !selectedPost) return
+    updateCommentMutation.mutate(
+      { id: selectedComment.id, body: selectedComment.body, postId: selectedPost.id },
+      {
+        onSuccess: () => {
+          setShowEditCommentDialog(false)
+        },
+      },
+    )
   }
 
   // 댓글 삭제
-  const deleteComment = async (id: number, postId: number) => {
-    try {
-      await fetch(`/api/comments/${id}`, { method: "DELETE" })
-      queryClient.invalidateQueries({ queryKey: ["comments", postId] })
-    } catch (error) {
-      console.error("댓글 삭제 오류:", error)
-    }
+  const handleDeleteComment = (id: number, postId: number) => {
+    deleteCommentMutation.mutate({ id, postId })
   }
 
   // 댓글 좋아요
-  const likeComment = async (comment: Comment, postId: number) => {
-    try {
-      await fetch(`/api/comments/${comment.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ likes: comment.likes + 1 }),
-      })
-      queryClient.invalidateQueries({ queryKey: ["comments", postId] })
-    } catch (error) {
-      console.error("댓글 좋아요 오류:", error)
-    }
+  const handleLikeComment = (comment: Comment, postId: number) => {
+    likeCommentMutation.mutate({ id: comment.id, postId, currentLikes: comment.likes })
   }
 
   // 검색 실행 (엔터 키)
@@ -251,7 +225,7 @@ const PostsManager = () => {
           </div>
 
           {/* 게시물 테이블 */}
-          <PostsTable onDeleteClick={deletePost} />
+          <PostsTable onDeleteClick={handleDeletePost} />
 
           {/* 페이지네이션 */}
           <div className="flex justify-between items-center">
@@ -309,7 +283,9 @@ const PostsManager = () => {
               value={newPost.userId}
               onChange={(e) => setNewPost({ ...newPost, userId: Number(e.target.value) })}
             />
-            <Button onClick={addPost}>게시물 추가</Button>
+            <Button onClick={handleAddPost} disabled={createPost.isPending}>
+              {createPost.isPending ? "추가 중..." : "게시물 추가"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -336,7 +312,9 @@ const PostsManager = () => {
                 selectedPost && setSelectedPost({ ...selectedPost, body: e.target.value })
               }
             />
-            <Button onClick={updatePost}>게시물 업데이트</Button>
+            <Button onClick={handleUpdatePost} disabled={updatePostMutation.isPending}>
+              {updatePostMutation.isPending ? "업데이트 중..." : "게시물 업데이트"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -353,7 +331,9 @@ const PostsManager = () => {
               value={newComment.body}
               onChange={(e) => setNewComment({ ...newComment, body: e.target.value })}
             />
-            <Button onClick={addComment}>댓글 추가</Button>
+            <Button onClick={handleAddComment} disabled={createComment.isPending}>
+              {createComment.isPending ? "추가 중..." : "댓글 추가"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -372,7 +352,9 @@ const PostsManager = () => {
                 selectedComment && setSelectedComment({ ...selectedComment, body: e.target.value })
               }
             />
-            <Button onClick={updateComment}>댓글 업데이트</Button>
+            <Button onClick={handleUpdateComment} disabled={updateCommentMutation.isPending}>
+              {updateCommentMutation.isPending ? "업데이트 중..." : "댓글 업데이트"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -416,7 +398,7 @@ const PostsManager = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => likeComment(comment, selectedPost.id)}
+                          onClick={() => handleLikeComment(comment, selectedPost.id)}
                         >
                           <ThumbsUp className="w-3 h-3" />
                           <span className="ml-1 text-xs">{comment.likes}</span>
@@ -434,7 +416,7 @@ const PostsManager = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteComment(comment.id, selectedPost.id)}
+                          onClick={() => handleDeleteComment(comment.id, selectedPost.id)}
                         >
                           <Trash2 className="w-3 h-3" />
                         </Button>
