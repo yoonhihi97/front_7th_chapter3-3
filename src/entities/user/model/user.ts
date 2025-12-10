@@ -25,6 +25,3 @@ export interface User extends UserPreview {
 
 // 선택된 사용자 (모달에서 사용)
 export const selectedUserAtom = atom<User | null>(null)
-
-// Dialog 상태
-export const showUserModalAtom = atom(false)
