@@ -1,37 +1,22 @@
 import { Edit2, MessageSquare, Trash2 } from "lucide-react"
-import { useNavigate, useSearchParams } from "react-router-dom"
 import { TableCell, TableRow } from "@/shared/ui/table"
 import { Button } from "@/shared/ui/button"
 import { Avatar } from "@/shared/ui/avatar"
 import { highlightText } from "@/shared/lib/highlight"
+import { usePostsParams, usePostsTableActions } from "@/widgets/posts-table"
 import { ReactionCount } from "./ReactionCount"
 import { Post } from "../model/post"
 
 interface PostRowProps {
   post: Post
-  onDeleteClick: (id: number) => void
-  onDetailClick: (post: Post) => void
-  onEditClick: (post: Post) => void
-  onAuthorClick: (userId: number) => void
 }
 
-export const PostRow = ({
-  post,
-  onDeleteClick,
-  onDetailClick,
-  onEditClick,
-  onAuthorClick,
-}: PostRowProps) => {
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const searchQuery = searchParams.get("search") || ""
-  const selectedTag = searchParams.get("tag") || ""
+export const PostRow = ({ post }: PostRowProps) => {
+  const { searchQuery, selectedTag, setTag } = usePostsParams()
+  const { onDeleteClick, onDetailClick, onEditClick, onAuthorClick } = usePostsTableActions()
 
   const handleTagClick = (tag: string) => {
-    const params = new URLSearchParams(searchParams)
-    params.set("tag", tag)
-    params.set("skip", "0")
-    navigate(`?${params.toString()}`)
+    setTag(tag)
   }
 
   const handleAuthorClick = () => {
