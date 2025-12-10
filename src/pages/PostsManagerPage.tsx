@@ -1,33 +1,21 @@
 import { useState } from "react"
 import { Plus, Search } from "lucide-react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { useAtom, useAtomValue } from "jotai"
+import { useAtom } from "jotai"
 import { useQuery } from "@tanstack/react-query"
-import {
-  selectedPostAtom,
-  showAddPostDialogAtom,
-  showEditPostDialogAtom,
-  showPostDetailDialogAtom,
-} from "@/entities/post"
-import type { Comment } from "@/entities/comment"
-import { commentQueries, CommentItem } from "@/entities/comment"
-import { selectedUserAtom, showUserModalAtom, UserInfo } from "@/entities/user"
+import { showEditPostDialogAtom, showPostDetailDialogAtom } from "@/entities/post"
+import { showUserModalAtom } from "@/entities/user"
 import { tagQueries } from "@/entities/tag"
-import { useCreatePost } from "@/features/post/create"
-import { useUpdatePost } from "@/features/post/update"
+import { CreatePostDialog } from "@/features/post/create"
+import { UpdatePostDialog } from "@/features/post/update"
 import { useDeletePost } from "@/features/post/delete"
-import { useCreateComment } from "@/features/comment/create"
-import { useUpdateComment } from "@/features/comment/update"
-import { useDeleteComment } from "@/features/comment/delete"
-import { useLikeComment } from "@/features/comment/like"
 import { PostsTable } from "@/widgets/posts-table"
+import { PostDetailDialog } from "@/widgets/post-detail-dialog"
+import { UserModal } from "@/widgets/user-modal"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
 import { Input } from "@/shared/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/ui/select"
-import { Textarea } from "@/shared/ui/textarea"
-import { highlightText } from "@/shared/lib/highlight"
 
 const PostsManager = () => {
   const navigate = useNavigate()
@@ -36,47 +24,25 @@ const PostsManager = () => {
   // URL에서 상태 읽기
   const skip = parseInt(searchParams.get("skip") || "0")
   const limit = parseInt(searchParams.get("limit") || "10")
-  const searchQuery = searchParams.get("search") || ""
+  const selectedTag = searchParams.get("tag") || ""
   const sortBy = searchParams.get("sortBy") || ""
   const sortOrder = searchParams.get("sortOrder") || "asc"
-  const selectedTag = searchParams.get("tag") || ""
+  const searchQuery = searchParams.get("search") || ""
 
   // 검색 입력값 (엔터 전 임시 상태)
   const [searchInput, setSearchInput] = useState(searchQuery)
 
-  // Jotai atoms
-  const [selectedPost, setSelectedPost] = useAtom(selectedPostAtom)
-  const [showAddDialog, setShowAddDialog] = useAtom(showAddPostDialogAtom)
+  // Dialog 상태 - 추가는 로컬, 수정/상세/사용자는 PostRow에서 atom으로 트리거
+  const [showAddDialog, setShowAddDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useAtom(showEditPostDialogAtom)
   const [showPostDetailDialog, setShowPostDetailDialog] = useAtom(showPostDetailDialogAtom)
-  const selectedUser = useAtomValue(selectedUserAtom)
   const [showUserModal, setShowUserModal] = useAtom(showUserModalAtom)
 
   // TanStack Query - tags
   const { data: tags = [] } = useQuery(tagQueries.list())
 
-  // TanStack Query - comments (선택된 게시물이 있을 때만)
-  const { data: commentsData } = useQuery({
-    ...commentQueries.byPost(selectedPost?.id ?? 0),
-    enabled: !!selectedPost?.id && showPostDetailDialog,
-  })
-  const comments = commentsData?.comments ?? []
-
-  // Mutations
-  const createPost = useCreatePost()
-  const updatePostMutation = useUpdatePost()
-  const deletePostMutation = useDeletePost()
-  const createComment = useCreateComment()
-  const updateCommentMutation = useUpdateComment()
-  const deleteCommentMutation = useDeleteComment()
-  const likeCommentMutation = useLikeComment()
-
-  // 로컬 form 상태
-  const [newPost, setNewPost] = useState({ title: "", body: "", userId: 1 })
-  const [selectedComment, setSelectedComment] = useState<Comment | null>(null)
-  const [newComment, setNewComment] = useState({ body: "", postId: null as number | null, userId: 1 })
-  const [showAddCommentDialog, setShowAddCommentDialog] = useState(false)
-  const [showEditCommentDialog, setShowEditCommentDialog] = useState(false)
+  // 게시물 삭제 mutation
+  const deletePost = useDeletePost()
 
   // URL 업데이트 함수
   const updateURL = (updates: Record<string, string>) => {
@@ -91,71 +57,12 @@ const PostsManager = () => {
     navigate(`?${params.toString()}`)
   }
 
-  // 게시물 추가
-  const handleAddPost = () => {
-    createPost.mutate(newPost, {
-      onSuccess: () => {
-        setShowAddDialog(false)
-        setNewPost({ title: "", body: "", userId: 1 })
-      },
-    })
-  }
-
-  // 게시물 업데이트
-  const handleUpdatePost = () => {
-    if (!selectedPost) return
-    updatePostMutation.mutate(selectedPost, {
-      onSuccess: () => {
-        setShowEditDialog(false)
-      },
-    })
-  }
-
-  // 게시물 삭제
-  const handleDeletePost = (id: number) => {
-    deletePostMutation.mutate(id)
-  }
-
-  // 댓글 추가
-  const handleAddComment = () => {
-    if (!newComment.postId) return
-    createComment.mutate(
-      { body: newComment.body, postId: newComment.postId, userId: newComment.userId },
-      {
-        onSuccess: () => {
-          setShowAddCommentDialog(false)
-          setNewComment({ body: "", postId: null, userId: 1 })
-        },
-      },
-    )
-  }
-
-  // 댓글 업데이트
-  const handleUpdateComment = () => {
-    if (!selectedComment || !selectedPost) return
-    updateCommentMutation.mutate(
-      { id: selectedComment.id, body: selectedComment.body, postId: selectedPost.id },
-      {
-        onSuccess: () => {
-          setShowEditCommentDialog(false)
-        },
-      },
-    )
-  }
-
-  // 댓글 삭제
-  const handleDeleteComment = (id: number, postId: number) => {
-    deleteCommentMutation.mutate({ id, postId })
-  }
-
-  // 댓글 좋아요
-  const handleLikeComment = (comment: Comment, postId: number) => {
-    likeCommentMutation.mutate({ id: comment.id, postId, currentLikes: comment.likes })
-  }
-
-  // 검색 실행 (엔터 키)
   const handleSearch = () => {
     updateURL({ search: searchInput, skip: "0" })
+  }
+
+  const handleDeletePost = (id: number) => {
+    deletePost.mutate(id)
   }
 
   return (
@@ -258,161 +165,11 @@ const PostsManager = () => {
         </div>
       </CardContent>
 
-      {/* 게시물 추가 대화상자 */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>새 게시물 추가</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="제목"
-              value={newPost.title}
-              onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-            />
-            <Textarea
-              rows={30}
-              placeholder="내용"
-              value={newPost.body}
-              onChange={(e) => setNewPost({ ...newPost, body: e.target.value })}
-            />
-            <Input
-              type="number"
-              placeholder="사용자 ID"
-              value={newPost.userId}
-              onChange={(e) => setNewPost({ ...newPost, userId: Number(e.target.value) })}
-            />
-            <Button onClick={handleAddPost} disabled={createPost.isPending}>
-              {createPost.isPending ? "추가 중..." : "게시물 추가"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 게시물 수정 대화상자 */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>게시물 수정</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Input
-              placeholder="제목"
-              value={selectedPost?.title || ""}
-              onChange={(e) =>
-                selectedPost && setSelectedPost({ ...selectedPost, title: e.target.value })
-              }
-            />
-            <Textarea
-              rows={15}
-              placeholder="내용"
-              value={selectedPost?.body || ""}
-              onChange={(e) =>
-                selectedPost && setSelectedPost({ ...selectedPost, body: e.target.value })
-              }
-            />
-            <Button onClick={handleUpdatePost} disabled={updatePostMutation.isPending}>
-              {updatePostMutation.isPending ? "업데이트 중..." : "게시물 업데이트"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 댓글 추가 대화상자 */}
-      <Dialog open={showAddCommentDialog} onOpenChange={setShowAddCommentDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>새 댓글 추가</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="댓글 내용"
-              value={newComment.body}
-              onChange={(e) => setNewComment({ ...newComment, body: e.target.value })}
-            />
-            <Button onClick={handleAddComment} disabled={createComment.isPending}>
-              {createComment.isPending ? "추가 중..." : "댓글 추가"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 댓글 수정 대화상자 */}
-      <Dialog open={showEditCommentDialog} onOpenChange={setShowEditCommentDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>댓글 수정</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <Textarea
-              placeholder="댓글 내용"
-              value={selectedComment?.body || ""}
-              onChange={(e) =>
-                selectedComment && setSelectedComment({ ...selectedComment, body: e.target.value })
-              }
-            />
-            <Button onClick={handleUpdateComment} disabled={updateCommentMutation.isPending}>
-              {updateCommentMutation.isPending ? "업데이트 중..." : "댓글 업데이트"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 게시물 상세 보기 대화상자 */}
-      <Dialog open={showPostDetailDialog} onOpenChange={setShowPostDetailDialog}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{highlightText(selectedPost?.title ?? "", searchQuery)}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>{highlightText(selectedPost?.body ?? "", searchQuery)}</p>
-
-            {/* 댓글 영역 */}
-            {selectedPost && (
-              <div className="mt-2">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-semibold">댓글</h3>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setNewComment((prev) => ({ ...prev, postId: selectedPost.id }))
-                      setShowAddCommentDialog(true)
-                    }}
-                  >
-                    <Plus className="w-3 h-3 mr-1" />
-                    댓글 추가
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  {comments.map((comment) => (
-                    <CommentItem
-                      key={comment.id}
-                      comment={comment}
-                      searchQuery={searchQuery}
-                      onLike={() => handleLikeComment(comment, selectedPost.id)}
-                      onEdit={() => {
-                        setSelectedComment(comment)
-                        setShowEditCommentDialog(true)
-                      }}
-                      onDelete={() => handleDeleteComment(comment.id, selectedPost.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* 사용자 모달 */}
-      <Dialog open={showUserModal} onOpenChange={setShowUserModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>사용자 정보</DialogTitle>
-          </DialogHeader>
-          {selectedUser && <UserInfo user={selectedUser} />}
-        </DialogContent>
-      </Dialog>
+      {/* Features/Widgets Dialogs */}
+      <CreatePostDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <UpdatePostDialog open={showEditDialog} onOpenChange={setShowEditDialog} />
+      <PostDetailDialog open={showPostDetailDialog} onOpenChange={setShowPostDetailDialog} />
+      <UserModal open={showUserModal} onOpenChange={setShowUserModal} />
     </Card>
   )
 }
