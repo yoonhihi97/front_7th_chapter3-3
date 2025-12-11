@@ -1,1 +1,1 @@
-export { useUserModal } from "./use-user-modal"
+export { useUserModal, isUserModalOpenAtom } from "./use-user-modal"

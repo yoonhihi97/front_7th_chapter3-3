@@ -1,5 +1,5 @@
 import { useAtom } from "jotai"
-import { selectedPostAtom } from "@/entities/post"
+import { selectedPostAtom } from "@/features/post/lib"
 import { Button } from "@/shared/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
 import { Input } from "@/shared/ui/input"

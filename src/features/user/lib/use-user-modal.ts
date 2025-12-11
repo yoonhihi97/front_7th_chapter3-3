@@ -1,6 +1,8 @@
-import { useState, useCallback } from "react"
-import { useSetAtom } from "jotai"
+import { useCallback } from "react"
+import { atom, useAtom, useSetAtom } from "jotai"
 import { getUserById, selectedUserAtom } from "@/entities/user"
+
+export const isUserModalOpenAtom = atom(false)
 
 interface UseUserModalReturn {
   modal: { open: boolean; onOpenChange: (open: boolean) => void }
@@ -9,7 +11,7 @@ interface UseUserModalReturn {
 
 export const useUserModal = (): UseUserModalReturn => {
   const setSelectedUser = useSetAtom(selectedUserAtom)
-  const [showModal, setShowModal] = useState(false)
+  const [showModal, setShowModal] = useAtom(isUserModalOpenAtom)
 
   const openModal = useCallback(
     async (userId: number) => {
@@ -17,7 +19,7 @@ export const useUserModal = (): UseUserModalReturn => {
       setSelectedUser(userData)
       setShowModal(true)
     },
-    [setSelectedUser],
+    [setSelectedUser, setShowModal],
   )
 
   return {

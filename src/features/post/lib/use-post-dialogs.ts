@@ -1,6 +1,12 @@
-import { useState, useCallback } from "react"
-import { useSetAtom } from "jotai"
-import { Post, selectedPostAtom } from "@/entities/post"
+import { useCallback } from "react"
+import { atom, useAtom, useSetAtom } from "jotai"
+import { Post } from "@/entities/post"
+
+// Atoms for dialog state
+export const selectedPostAtom = atom<Post | null>(null)
+export const isAddDialogOpenAtom = atom(false)
+export const isEditDialogOpenAtom = atom(false)
+export const isDetailDialogOpenAtom = atom(false)
 
 interface UsePostDialogsReturn {
   // 다이얼로그 상태
@@ -16,16 +22,16 @@ interface UsePostDialogsReturn {
 export const usePostDialogs = (): UsePostDialogsReturn => {
   const setSelectedPost = useSetAtom(selectedPostAtom)
 
-  const [showAdd, setShowAdd] = useState(false)
-  const [showEdit, setShowEdit] = useState(false)
-  const [showDetail, setShowDetail] = useState(false)
+  const [showAdd, setShowAdd] = useAtom(isAddDialogOpenAtom)
+  const [showEdit, setShowEdit] = useAtom(isEditDialogOpenAtom)
+  const [showDetail, setShowDetail] = useAtom(isDetailDialogOpenAtom)
 
   const openDetail = useCallback(
     (post: Post) => {
       setSelectedPost(post)
       setShowDetail(true)
     },
-    [setSelectedPost],
+    [setSelectedPost, setShowDetail],
   )
 
   const openEdit = useCallback(
@@ -33,7 +39,7 @@ export const usePostDialogs = (): UsePostDialogsReturn => {
       setSelectedPost(post)
       setShowEdit(true)
     },
-    [setSelectedPost],
+    [setSelectedPost, setShowEdit],
   )
 
   return {
