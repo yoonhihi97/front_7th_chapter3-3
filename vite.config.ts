@@ -3,8 +3,9 @@ import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react()],
+  base: command === "build" ? "/front_7th_chapter3-3/" : "/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -20,4 +21,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))
