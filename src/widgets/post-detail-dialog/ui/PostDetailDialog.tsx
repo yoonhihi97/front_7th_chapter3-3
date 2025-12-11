@@ -1,14 +1,11 @@
 import { useState } from "react"
 import { Plus } from "lucide-react"
 import { useSearchParams } from "react-router-dom"
-import { useAtomValue, useSetAtom } from "jotai"
+import { useAtomValue } from "jotai"
 import { useQuery } from "@tanstack/react-query"
 import { selectedPostAtom } from "@/features/post"
-import { commentQueries, CommentItem, selectedCommentAtom } from "@/entities/comment"
-import { CreateCommentDialog } from "@/features/comment/create"
-import { UpdateCommentDialog } from "@/features/comment/update"
-import { useDeleteComment } from "@/features/comment/delete"
-import { useLikeComment } from "@/features/comment/like"
+import { CommentItem, CreateCommentDialog, UpdateCommentDialog } from "@/features/comment"
+import { commentQueries } from "@/entities/comment"
 import { Button } from "@/shared/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
 import { highlightText } from "@/shared/lib/highlight"
@@ -23,7 +20,6 @@ export const PostDetailDialog = ({ open, onOpenChange }: PostDetailDialogProps) 
   const searchQuery = searchParams.get("search") || ""
 
   const selectedPost = useAtomValue(selectedPostAtom)
-  const setSelectedComment = useSetAtom(selectedCommentAtom)
 
   const [showAddCommentDialog, setShowAddCommentDialog] = useState(false)
   const [showEditCommentDialog, setShowEditCommentDialog] = useState(false)
@@ -33,19 +29,6 @@ export const PostDetailDialog = ({ open, onOpenChange }: PostDetailDialogProps) 
     enabled: !!selectedPost?.id && open,
   })
   const comments = commentsData?.comments ?? []
-
-  const deleteComment = useDeleteComment()
-  const likeComment = useLikeComment()
-
-  const handleLikeComment = (commentId: number, currentLikes: number) => {
-    if (!selectedPost) return
-    likeComment.mutate({ id: commentId, postId: selectedPost.id, currentLikes })
-  }
-
-  const handleDeleteComment = (commentId: number) => {
-    if (!selectedPost) return
-    deleteComment.mutate({ id: commentId, postId: selectedPost.id })
-  }
 
   return (
     <>
@@ -72,12 +55,7 @@ export const PostDetailDialog = ({ open, onOpenChange }: PostDetailDialogProps) 
                       key={comment.id}
                       comment={comment}
                       searchQuery={searchQuery}
-                      onLike={() => handleLikeComment(comment.id, comment.likes)}
-                      onEdit={() => {
-                        setSelectedComment(comment)
-                        setShowEditCommentDialog(true)
-                      }}
-                      onDelete={() => handleDeleteComment(comment.id)}
+                      onEditClick={() => setShowEditCommentDialog(true)}
                     />
                   ))}
                 </div>
