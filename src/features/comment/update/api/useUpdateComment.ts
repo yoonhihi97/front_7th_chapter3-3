@@ -42,8 +42,5 @@ export const useUpdateComment = () => {
         queryClient.setQueryData(context.queryKey, context.previousData)
       }
     },
-    onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["comments", "post", variables.postId] })
-    },
   })
 }

@@ -35,8 +35,5 @@ export const useDeletePost = () => {
         })
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-    },
   })
 }

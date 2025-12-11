@@ -20,26 +20,19 @@ export const useCreateComment = () => {
 
       const previousData = queryClient.getQueryData<CommentsResponse>(queryKey)
 
-      const tempComment: CommentDto = {
-        id: Date.now(),
-        body: newComment.body,
-        postId: newComment.postId,
-        likes: 0,
-        user: { id: newComment.userId, username: "", fullName: "" },
-      }
-
-      queryClient.setQueryData<CommentsResponse>(queryKey, (old) => {
-        if (!old) return old
-        return {
-          ...old,
-          comments: [...old.comments, tempComment],
-          total: old.total + 1,
-        }
-      })
-
       return { previousData, queryKey }
     },
-    onSuccess: () => {
+    onSuccess: (data, _variables, context) => {
+      if (context?.queryKey) {
+        queryClient.setQueryData<CommentsResponse>(context.queryKey, (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            comments: [...old.comments, data],
+            total: old.total + 1,
+          }
+        })
+      }
       toast.success("댓글이 추가되었습니다.")
     },
     onError: (_err, _newComment, context) => {
@@ -47,9 +40,6 @@ export const useCreateComment = () => {
       if (context?.previousData) {
         queryClient.setQueryData(context.queryKey, context.previousData)
       }
-    },
-    onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["comments", "post", variables.postId] })
     },
   })
 }

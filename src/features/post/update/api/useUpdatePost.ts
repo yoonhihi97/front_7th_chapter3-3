@@ -36,8 +36,5 @@ export const useUpdatePost = () => {
         })
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["posts"] })
-    },
   })
 }
